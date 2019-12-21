@@ -25,14 +25,24 @@ class ActiveMACHomeBusApp < HomeBusApp
     end
   end
 
+  def str_to_mac(str)
+    result = ''
+
+    str.split('').each do |char|
+      result += '%02x' % char.ord
+    end
+
+    result
+  end
+
   def get_arp_table
     entries = []
     begin
       response = @manager.walk( [ '1.3.6.1.2.1.4.22.1.2' ] ) do |row|
         pp row
         pp row.class
-        row.each_varbind do |vb|
-          pp vb
+        row.each do |vb|
+          entries.push str_to_mac(vb.value)
         end
       end
 
@@ -40,7 +50,7 @@ class ActiveMACHomeBusApp < HomeBusApp
       nil
     end
 
-    entries
+    entries.sort
   end
 
   def work!
