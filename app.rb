@@ -9,6 +9,7 @@ class ActiveMACHomeBusApp < HomeBusApp
     @options = options
 
     @manager_hostname = @options[:agent]
+    @old_arp_table = []
 
     super
   end
@@ -26,7 +27,7 @@ class ActiveMACHomeBusApp < HomeBusApp
 
   def get_arp_table
     entries = []
-#    begin
+    begin
       response = @manager.walk( [ '1.3.6.1.2.1.4.22.1.2' ] ) do |row|
         pp row
         pp row.class
@@ -35,29 +36,29 @@ class ActiveMACHomeBusApp < HomeBusApp
         end
       end
 
-#    rescue
-#      nil
-#    end
+    rescue
+      nil
+    end
 
     entries
   end
 
   def work!
+    arp_table = get_arp_table
+
     results = { id: @uuid,
                 timestamp: Time.now.to_i,
-                arp_table: get_arp_table
+                arp_table: arp_table
                 }
-
-    pp results
-
-    exit
-
-    @mqtt.publish 'homebus/device/' + @uuid,
-                  JSON.generate(results),
-                  true
 
     if @options[:verbose]
       pp results
+    end
+
+    if arp_table && arp_table != @old_arp_table
+      @mqtt.publish 'homebus/device/' + @uuid,
+                    JSON.generate(results),
+                    true
     end
 
     sleep update_interval
@@ -84,7 +85,7 @@ class ActiveMACHomeBusApp < HomeBusApp
   end
 
   def serial_number
-    ''
+    File.read('/etc/hostname') + ' - ' + @manager_hostname
   end
 
   def pin
