@@ -39,8 +39,6 @@ class ActiveMACHomeBusApp < HomeBusApp
     entries = []
     begin
       response = @manager.walk( [ '1.3.6.1.2.1.4.22.1.2' ] ) do |row|
-        pp row
-        pp row.class
         row.each do |vb|
           entries.push str_to_mac(vb.value)
         end
