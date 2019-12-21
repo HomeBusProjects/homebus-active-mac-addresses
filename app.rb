@@ -67,6 +67,15 @@ class ActiveMACHomeBusApp < HomeBusApp
       @mqtt.publish 'homebus/device/' + @uuid,
                     JSON.generate(results),
                     true
+
+      if @options[:verbose]
+        puts 'submitting update'
+      end
+    else
+      if @options[:verbose]
+        puts 'skipping duplicate submission'
+      end
+      
     end
 
     sleep update_interval
