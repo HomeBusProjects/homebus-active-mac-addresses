@@ -5,6 +5,8 @@ require 'mqtt'
 require 'json'
 
 class ActiveMACHomeBusApp < HomeBusApp
+  DDC = 'com.romkey.experimental.active-mac-addresses'
+
   def initialize(options)
     @options = options
 
@@ -35,7 +37,7 @@ class ActiveMACHomeBusApp < HomeBusApp
     result
   end
 
-  def get_arp_table
+  def _get_arp_table
     entries = []
     begin
       response = @manager.walk( [ '1.3.6.1.2.1.4.22.1.2' ] ) do |row|
@@ -52,25 +54,17 @@ class ActiveMACHomeBusApp < HomeBusApp
   end
 
   def work!
-    arp_table = get_arp_table
 
-    results = { id: @uuid,
-                timestamp: Time.now.to_i,
-                arp_table: arp_table
-                }
-
-    if @options[:verbose]
-      pp results
-    end
-
-    if arp_table && arp_table != @old_arp_table
-      @mqtt.publish 'homebus/device/' + @uuid,
-                    JSON.generate(results),
-                    true
+    if arp_table.length > 0 && arp_table != @old_arp_table
+      results = {
+         arp_table: arp_table
+      }
 
       if @options[:verbose]
-        puts 'submitting update'
+        pp results
       end
+
+      publish! DDC, results
     else
       if @options[:verbose]
         puts 'skipping duplicate submission'
@@ -117,7 +111,7 @@ class ActiveMACHomeBusApp < HomeBusApp
         index: 0,
         accuracy: 0,
         precision: 0,
-        wo_topics: [ 'org.homebus.active-mac-addresses' ],
+        wo_topics: [ DDC ],
         ro_topics: [],
         rw_topics: []
       }
